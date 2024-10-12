@@ -3,10 +3,9 @@ const { ccclass, property } = _decorator;
 
 @ccclass("DragNode")
 export class DragNode extends Component {
-  private isDragging = false;
-  public dragable = false;
-  private startTouchPosition: Vec2 = new Vec2();
-  private startNodePosition: Vec2 = new Vec2();
+  public dragable = false; //是否能拖动
+  public row: number = 0; //行
+  public col: number = 0; //列
 
   onLoad() {
     console.log(this.node.getPosition());
@@ -29,6 +28,5 @@ export class DragNode extends Component {
   onTouchEnd(touch: EventTouch) {
     const location = touch.getLocation();
     console.log("onTouchEnd", location.x, location.y);
-    this.isDragging = false;
   }
 }

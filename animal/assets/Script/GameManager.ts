@@ -20,7 +20,7 @@ export class GameManager extends Component {
   public container: Node | null = null;
   @property({ type: Prefab })
   public ElementPrefab: Node | null = null;
-  private ALL_TYPE = 8;
+  private readonly ALL_TYPE = 8;
   start() {
     this.initGame();
   }
