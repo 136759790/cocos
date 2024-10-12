@@ -1,14 +1,4 @@
-import {
-  _decorator,
-  Component,
-  instantiate,
-  Node,
-  NodeEventType,
-  Prefab,
-  resources,
-  Sprite,
-  SpriteFrame,
-} from "cc";
+import { _decorator, Component, instantiate, Node, NodeEventType, Prefab, resources, Sprite, SpriteFrame } from "cc";
 import { AnimalNode } from "./AnimalNode";
 const { ccclass, property } = _decorator;
 interface Position {
@@ -57,20 +47,14 @@ export class GameManager extends Component {
   clickNode(node: Node): void {
     const x = node.getComponent(AnimalNode).x;
     const y = node.getComponent(AnimalNode).y;
-    const index = node.getComponent(AnimalNode).index;
     const up = this.getNodeByPostion({ x, y }, Direction.UP);
     const down = this.getNodeByPostion({ x, y }, Direction.DOWN);
     const left = this.getNodeByPostion({ x, y }, Direction.LEFT);
     const right = this.getNodeByPostion({ x, y }, Direction.RIGHT);
-    const target = this.container
-      .getComponentsInChildren(AnimalNode)
-      .find((e) => e.x === x && e.y === y);
+    const target = this.container.getComponentsInChildren(AnimalNode).find((e) => e.x === x && e.y === y);
     const array = [up, down, left, right];
     const sameNode = array.filter(
-      (e) =>
-        e != null &&
-        e.getComponent(AnimalNode).index ==
-          target.getComponent(AnimalNode).index
+      (e) => e != null && e.getComponent(AnimalNode).index == target.getComponent(AnimalNode).index
     );
     if (sameNode.length === 1) {
       target.node.destroy();
@@ -127,18 +111,14 @@ export class GameManager extends Component {
         x--;
         break;
     }
-    const node = this.container
-      .getComponentsInChildren(AnimalNode)
-      .find((e) => e.x === x && e.y === y);
+    const node = this.container.getComponentsInChildren(AnimalNode).find((e) => e.x === x && e.y === y);
     if (node == undefined) {
       return this.getNodeByPostion({ x, y }, direction);
     }
     return node.node;
   }
   getNodeByContainer(x: number, y: number) {
-    const node = this.container
-      .getComponentsInChildren(AnimalNode)
-      .find((e) => e.x === x && e.y === y);
+    const node = this.container.getComponentsInChildren(AnimalNode).find((e) => e.x === x && e.y === y);
     return node.node;
   }
   /**
@@ -149,10 +129,7 @@ export class GameManager extends Component {
     let x = 0;
     let y = 0;
     const xMax = 10;
-    const yMax = 13;
     prefabs.forEach((e) => {
-      let m = x;
-      let n = y;
       e.getComponent(AnimalNode).x = x;
       e.getComponent(AnimalNode).y = y;
       e.on(NodeEventType.MOUSE_UP, () => this.clickNode(e));
@@ -178,9 +155,7 @@ export class GameManager extends Component {
     const baseTimes = Math.floor(70 / typeCount);
     const moreTimeTypeCounts = 70 % typeCount;
     const allElement = Array.from({ length: this.ALL_TYPE }, (_, i) => i + 1);
-    const selectedElement = allElement
-      .sort(() => Math.random() - 0.5)
-      .slice(0, typeCount);
+    const selectedElement = allElement.sort(() => Math.random() - 0.5).slice(0, typeCount);
     let finalArray = [];
     //添加基准的
     selectedElement.forEach((e) => {
