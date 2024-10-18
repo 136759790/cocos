@@ -1,4 +1,16 @@
-import { _decorator, Component, instantiate, Node, NodeEventType, Prefab, resources, Sprite, SpriteFrame } from "cc";
+import {
+  _decorator,
+  Component,
+  instantiate,
+  Node,
+  NodeEventType,
+  Prefab,
+  resources,
+  Sprite,
+  SpriteFrame,
+  sys,
+  view,
+} from "cc";
 import { AnimalNode } from "./AnimalNode";
 const { ccclass, property } = _decorator;
 interface Position {
@@ -22,6 +34,9 @@ export class GameManager extends Component {
   public ElementPrefab: Node | null = null;
   private readonly ALL_TYPE = 8;
   start() {
+    console.log(sys.platform);
+    console.log(view.getVisibleSize());
+
     this.initGame();
   }
 
