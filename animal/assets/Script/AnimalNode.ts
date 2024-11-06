@@ -12,7 +12,8 @@ export class AnimalNode extends Component {
   private dragDirection: Direction = Direction.UNKNOWN;
   private sumX = 0;
   private sumY = 0;
-  private movedNodes: Node[] = [];
+  private movedNodesLeft: Node[] = [];
+  private movedNodesRight: Node[] = [];
   private sameNodes: Node[] = [];
   start() {
     this.node.on(NodeEventType.TOUCH_MOVE, this.onTouchMove, this);
@@ -20,7 +21,7 @@ export class AnimalNode extends Component {
     this.node.on(NodeEventType.TOUCH_CANCEL, this.onTouchEnd, this);
   }
 
-  checkAndDestroy(col: number, row: number, target: AnimalNode) {
+  destroyNode(col: number, row: number, target: AnimalNode) {
     this.node.parent.getComponent(GameManager).needDestroyIds.push(target.id);
     const index = target.index;
     const up = this.getNextNode({ col, row }, Direction.UP);
@@ -74,113 +75,100 @@ export class AnimalNode extends Component {
     this.sumX += x;
     this.sumY += y;
     if (this.dragDirection === Direction.UNKNOWN) {
-      const max = 30; //拖动超过30后判断只能横向还是纵向
-      if (Math.max(Math.abs(this.sumX), Math.abs(this.sumY)) < max) {
-        return;
-      }
-      if (Math.abs(this.sumX) > Math.abs(this.sumY)) {
-        if (this.sumX > 0) {
-          this.dragDirection = Direction.RIGHT;
-        } else {
-          this.dragDirection = Direction.LEFT;
-        }
-      } else {
-        if (this.sumY > 0) {
-          this.dragDirection = Direction.UP;
-        } else {
-          this.dragDirection = Direction.DOWN;
-        }
-      }
+      this.checkDirection();
     }
-    const originP = this.node.getPosition();
-    if (this.dragDirection === Direction.RIGHT) {
-      this.node.setPosition(new Vec3(originP.x + x, this.originY, 0));
-      this.movedNodes = this.getRelatedNodes(Direction.RIGHT);
-      const lastNode = this.movedNodes.length > 0 ? this.movedNodes[this.movedNodes.length - 1] : this.node;
-      if (lastNode.getComponent(AnimalNode).col >= 9) {
+    if (this.dragDirection === Direction.HORIZONTAL) {
+      this.moveHorizontal(x, y);
+    } else if (this.dragDirection === Direction.VERTICAL) {
+      this.moveVertical(x, y);
+    }
+  }
+  moveHorizontal(x: number, y: number) {
+    this.movedNodesLeft = [];
+    this.movedNodesRight = [];
+    if (this.sumX > 0) {
+      this.movedNodesRight = this.getRelatedNodes(Direction.RIGHT);
+      const lastRelatedNode =
+        this.movedNodesRight.length > 0 ? this.movedNodesRight[this.movedNodesRight.length - 1] : this.node;
+      if (lastRelatedNode.getComponent(AnimalNode).col >= 9) {
         return;
       }
       let spaceNum = 0;
-      for (let i = lastNode.getComponent(AnimalNode).col + 1; i < 10; i++) {
-        if (this.getNodeByPostion({ col: i, row: lastNode.getComponent(AnimalNode).row }) != null) {
+      for (let i = lastRelatedNode.getComponent(AnimalNode).col + 1; i <= 9; i++) {
+        if (this.getNodeByPostion({ col: i, row: lastRelatedNode.getComponent(AnimalNode).row }) != null) {
           break;
         }
         spaceNum++;
       }
-      console.log("spaceNum", spaceNum);
       if (this.sumX > spaceNum * 60) {
-        let xMax = this.node.getComponent(AnimalNode).col + spaceNum;
-        const pos = this.getPostionByCoodidate(xMax, lastNode.getComponent(AnimalNode).row);
+        //超出拖动范围
+        let colMax = this.node.getComponent(AnimalNode).col + spaceNum;
+        const pos = this.getPostionByCoodidate(colMax, lastRelatedNode.getComponent(AnimalNode).row);
         this.node.setPosition(new Vec3(pos.x, pos.y, 0));
         this.sumX = spaceNum * 60;
-        if (this.movedNodes.length > 0) {
-          this.movedNodes.forEach((n) => {
-            let maxNode = n.getComponent(AnimalNode);
-            const pos = this.getPostionByCoodidate(maxNode.col + spaceNum, maxNode.row);
+        if (this.movedNodesRight.length > 0) {
+          this.movedNodesRight.forEach((n) => {
+            let animal = n.getComponent(AnimalNode);
+            const pos = this.getPostionByCoodidate(animal.col + spaceNum, animal.row);
             n.setPosition(new Vec3(pos.x, pos.y, 0));
           });
         }
         return;
-      }
-      if (this.movedNodes.length > 0) {
-        this.movedNodes.forEach((n) => {
-          const ps = n.getPosition();
-          n.setPosition(new Vec3(ps.x + x, ps.y, 0));
-        });
-      }
-    } else if (this.dragDirection === Direction.LEFT) {
-      this.movedNodes = this.getRelatedNodes(Direction.LEFT);
-      const firstNode = this.movedNodes.length > 0 ? this.movedNodes[this.movedNodes.length - 1] : this.node;
-      if (firstNode.getComponent(AnimalNode).col <= 0) {
-        return;
-      }
-      let spaceNum = 0;
-      for (let i = firstNode.getComponent(AnimalNode).col - 1; i >= 0; i--) {
-        if (this.getNodeByPostion({ col: i, row: firstNode.getComponent(AnimalNode).row }) != null) {
-          break;
-        }
-        spaceNum++;
-      }
-      console.log("spaceNum", spaceNum);
-      this.node.setPosition(new Vec3(originP.x, this.originY, 0));
-      if (Math.abs(this.sumX) > spaceNum * 60) {
-        let xMin = this.node.getComponent(AnimalNode).col - spaceNum;
-        const pos = this.getPostionByCoodidate(xMin, firstNode.getComponent(AnimalNode).row);
-        this.node.setPosition(new Vec3(pos.x, pos.y, 0));
-        this.sumX = spaceNum * -60;
-        if (this.movedNodes.length > 0) {
-          this.movedNodes.forEach((n) => {
-            let maxNode = n.getComponent(AnimalNode);
-            const pos = this.getPostionByCoodidate(maxNode.col - spaceNum, maxNode.row);
-            n.setPosition(new Vec3(pos.x, pos.y, 0));
-          });
-        }
-        return;
-      }
-      if (this.movedNodes.length > 0) {
-        this.movedNodes.forEach((n) => {
-          const ps = n.getPosition();
-          n.setPosition(new Vec3(ps.x + x, ps.y, 0));
-        });
-      }
-    } else if (this.dragDirection === Direction.UP) {
-      this.movedNodes = this.getRelatedNodes(Direction.UP);
-      this.node.setPosition(new Vec3(this.originX, originP.y, 0));
-      if (this.movedNodes.length > 0) {
-        this.movedNodes.forEach((n) => {
+      } //拖动范围内
+      if (this.movedNodesRight.length > 0) {
+        this.movedNodesRight.forEach((n) => {
           const ps = n.getPosition();
           n.setPosition(new Vec3(ps.x + x, ps.y, 0));
         });
       }
     } else {
-      this.node.setPosition(new Vec3(this.originX, originP.y, 0));
-      this.movedNodes = this.getRelatedNodes(Direction.DOWN);
-      if (this.movedNodes.length > 0) {
-        this.movedNodes.forEach((n) => {
+      this.movedNodesLeft = this.getRelatedNodes(Direction.LEFT);
+      const firstRelatedNode =
+        this.movedNodesLeft.length > 0 ? this.movedNodesLeft[this.movedNodesLeft.length - 1] : this.node;
+      if (firstRelatedNode.getComponent(AnimalNode).col <= 0) {
+        return;
+      }
+      let spaceNum = 0;
+      for (let i = firstRelatedNode.getComponent(AnimalNode).col - 1; i >= 0; i--) {
+        if (this.getNodeByPostion({ col: i, row: firstRelatedNode.getComponent(AnimalNode).row }) != null) {
+          break;
+        }
+        spaceNum++;
+      }
+      if (Math.abs(this.sumX) > spaceNum * 60) {
+        let colMin = this.node.getComponent(AnimalNode).col - spaceNum;
+        const pos = this.getPostionByCoodidate(colMin, firstRelatedNode.getComponent(AnimalNode).row);
+        this.node.setPosition(new Vec3(pos.x, pos.y, 0));
+        this.sumX = spaceNum * -60;
+        if (this.movedNodesLeft.length > 0) {
+          this.movedNodesLeft.forEach((n) => {
+            let animal = n.getComponent(AnimalNode);
+            const pos = this.getPostionByCoodidate(animal.col - spaceNum, animal.row);
+            n.setPosition(new Vec3(pos.x, pos.y, 0));
+          });
+        }
+        return;
+      }
+      if (this.movedNodesLeft.length > 0) {
+        this.movedNodesLeft.forEach((n) => {
           const ps = n.getPosition();
-          n.setPosition(new Vec3(ps.x, ps.y + y, 0));
+          n.setPosition(new Vec3(ps.x + x, ps.y, 0));
         });
       }
+    }
+    const pos = this.node.getPosition();
+    this.node.setPosition(new Vec3(pos.x + x, this.originY, 0));
+  }
+  moveVertical(x: number, y: number) {}
+  checkDirection() {
+    const max = 10; //拖动超过30后判断只能横向还是纵向
+    if (Math.max(Math.abs(this.sumX), Math.abs(this.sumY)) < max) {
+      return;
+    }
+    if (Math.abs(this.sumX) > Math.abs(this.sumY)) {
+      this.dragDirection = Direction.HORIZONTAL;
+    } else {
+      this.dragDirection = Direction.VERTICAL;
     }
   }
   getRelatedNodes(direction: Direction) {
@@ -246,17 +234,17 @@ export class AnimalNode extends Component {
     this.sumY = 0;
     this.node.setPosition(new Vec3(targetPos.x, targetPos.y, 0));
     const hasSameNode = this.hasSameNode(targetPos.col, targetPos.row, this);
+    const allNodes = [...this.movedNodesLeft, ...this.movedNodesRight];
     if (!hasSameNode) {
-      this.resetPosition();
-      this.movedNodes.forEach((e) => {
-        e.getComponent(AnimalNode).resetPosition();
+      this.resetPositionAndCoordinate();
+      allNodes.forEach((e) => {
+        e.getComponent(AnimalNode).resetPositionAndCoordinate();
       });
-      this.movedNodes = [];
       return;
     }
     const offsetCol = targetPos.col - this.col;
     const offsetRow = targetPos.row - this.row;
-    this.movedNodes.forEach((e) => {
+    allNodes.forEach((e) => {
       const animal = e.getComponent(AnimalNode);
       animal.col += offsetCol;
       animal.row += offsetRow;
@@ -264,7 +252,9 @@ export class AnimalNode extends Component {
     });
     this.col = targetPos.col;
     this.row = targetPos.row;
-    this.checkAndDestroy(this.col, this.row, this);
+    this.destroyNode(this.col, this.row, this);
+    this.movedNodesLeft = [];
+    this.movedNodesRight = [];
   }
 
   private getCoordinateByPos(x: number, y: number): Position {
@@ -329,14 +319,18 @@ export class AnimalNode extends Component {
       y: row * 60,
     };
   }
-  resetPosition() {
+  resetPositionAndCoordinate() {
     this.node.setPosition(new Vec3(this.originX, this.originY, 0));
     const data = this.getCoordinateByPos(this.originX, this.originY);
     this.node.getComponent(AnimalNode).col = data.col;
     this.node.getComponent(AnimalNode).row = data.row;
   }
   updatePosByCordinate() {
-    this.node.setPosition(new Vec3(this.col * 60 + 40, this.row * 60, 0));
+    const x = this.col * 60 + 40;
+    const y = this.row * 60;
+    this.node.setPosition(new Vec3(x, y, 0));
+    this.node.getComponent(AnimalNode).originX = x;
+    this.node.getComponent(AnimalNode).originY = y;
   }
 }
 interface Position {
@@ -351,4 +345,6 @@ export enum Direction {
   DOWN,
   LEFT,
   UNKNOWN,
+  HORIZONTAL,
+  VERTICAL,
 }
