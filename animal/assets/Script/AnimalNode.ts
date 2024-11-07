@@ -14,60 +14,25 @@ export class AnimalNode extends Component {
   private sumY = 0;
   private movedNodesLeft: Node[] = [];
   private movedNodesRight: Node[] = [];
-  private sameNodes: Node[] = [];
+  private movedNodesUp: Node[] = [];
+  private movedNodesDown: Node[] = [];
+
   start() {
     this.node.on(NodeEventType.TOUCH_MOVE, this.onTouchMove, this);
     this.node.on(NodeEventType.TOUCH_END, this.onTouchEnd, this);
-    this.node.on(NodeEventType.TOUCH_CANCEL, this.onTouchEnd, this);
+    this.node.on(NodeEventType.TOUCH_CANCEL, this.onTouchCancel, this);
   }
 
-  destroyNode(col: number, row: number, target: AnimalNode) {
-    this.node.parent.getComponent(GameManager).needDestroyIds.push(target.id);
-    const index = target.index;
-    const up = this.getNextNode({ col, row }, Direction.UP);
-    const down = this.getNextNode({ col, row }, Direction.DOWN);
-    const left = this.getNextNode({ col, row }, Direction.LEFT);
-    const right = this.getNextNode({ col, row }, Direction.RIGHT);
-    const array = [up, down, left, right].filter((e) => e != null);
-    this.sameNodes = array.filter((e) => e.getComponent(AnimalNode).index == index);
-    if (this.sameNodes.length === 1) {
-      const manager = this.node.parent.getComponent(GameManager);
-      manager.needDestroyIds.push(this.sameNodes[0].getComponent(AnimalNode).id);
-      manager.destroyNodes();
-    } else if (this.sameNodes.length > 1) {
-      const nodes = this.node.parent.children;
-      nodes.forEach((e) => {
-        const sprite = e.getComponent(Sprite);
-        sprite.grayscale = true;
-      });
-      this.sameNodes.forEach((e) => {
-        e.getComponent(Sprite).grayscale = false;
-        e.on(NodeEventType.TOUCH_START, () => {
-          this.clickChoose(e);
-        });
-      });
-    }
-  }
-  clickChoose(target: Node) {
-    const manager = this.node.parent.getComponent(GameManager);
-    manager.needDestroyIds.push(target.getComponent(AnimalNode).id);
-    manager.destroyNodes();
-    this.sameNodes.forEach((e) => {
-      if (e) {
-        e.off(NodeEventType.TOUCH_START);
-      }
-    });
-  }
   hasSameNode(col: number, row: number, target: AnimalNode): boolean {
     const index = target.index;
-    console.log("onClick");
     const up = this.getNextNode({ col, row }, Direction.UP);
     const down = this.getNextNode({ col, row }, Direction.DOWN);
     const left = this.getNextNode({ col, row }, Direction.LEFT);
     const right = this.getNextNode({ col, row }, Direction.RIGHT);
     const array = [up, down, left, right].filter((e) => e != null);
-    const sameNode = array.filter((e) => e.getComponent(AnimalNode).index == index);
-    return sameNode.length > 0;
+    const sameNodes = array.filter((e) => e.getComponent(AnimalNode).index == index);
+    this.node.parent.getComponent(GameManager).sameNodes = sameNodes;
+    return sameNodes.length > 0;
   }
 
   onTouchMove(touch: EventTouch) {
@@ -113,13 +78,14 @@ export class AnimalNode extends Component {
             n.setPosition(new Vec3(pos.x, pos.y, 0));
           });
         }
-        return;
-      } //拖动范围内
-      if (this.movedNodesRight.length > 0) {
+      } else if (this.movedNodesRight.length > 0) {
+        this.node.setPosition(new Vec3(this.node.position.x + x, this.node.position.y, 0));
         this.movedNodesRight.forEach((n) => {
           const ps = n.getPosition();
           n.setPosition(new Vec3(ps.x + x, ps.y, 0));
         });
+      } else {
+        this.node.setPosition(new Vec3(this.node.position.x + x, this.node.position.y, 0));
       }
     } else {
       this.movedNodesLeft = this.getRelatedNodes(Direction.LEFT);
@@ -147,19 +113,95 @@ export class AnimalNode extends Component {
             n.setPosition(new Vec3(pos.x, pos.y, 0));
           });
         }
-        return;
-      }
-      if (this.movedNodesLeft.length > 0) {
+      } else if (this.movedNodesLeft.length > 0) {
+        this.node.setPosition(new Vec3(this.node.position.x + x, this.node.position.y, 0));
         this.movedNodesLeft.forEach((n) => {
           const ps = n.getPosition();
           n.setPosition(new Vec3(ps.x + x, ps.y, 0));
         });
+      } else {
+        this.node.setPosition(new Vec3(this.node.position.x + x, this.node.position.y, 0));
+      }
+    }
+  }
+  moveVertical(x: number, y: number) {
+    this.movedNodesUp = [];
+    this.movedNodesDown = [];
+    if (this.sumY > 0) {
+      this.movedNodesUp = this.getRelatedNodes(Direction.UP);
+      const lastRelatedNode =
+        this.movedNodesUp.length > 0 ? this.movedNodesUp[this.movedNodesUp.length - 1] : this.node;
+      if (lastRelatedNode.getComponent(AnimalNode).row >= 13) {
+        return;
+      }
+      let spaceNum = 0;
+      for (let i = lastRelatedNode.getComponent(AnimalNode).row + 1; i <= 13; i++) {
+        if (this.getNodeByPostion({ col: lastRelatedNode.getComponent(AnimalNode).col, row: i }) != null) {
+          break;
+        }
+        spaceNum++;
+      }
+      if (this.sumY > spaceNum * 60) {
+        //超出拖动范围
+        let rowMax = this.node.getComponent(AnimalNode).row + spaceNum;
+        const pos = this.getPostionByCoodidate(lastRelatedNode.getComponent(AnimalNode).col, rowMax);
+        this.node.setPosition(new Vec3(pos.x, pos.y, 0));
+        this.sumY = spaceNum * 60;
+        if (this.movedNodesUp.length > 0) {
+          this.movedNodesUp.forEach((n) => {
+            let animal = n.getComponent(AnimalNode);
+            const pos = this.getPostionByCoodidate(animal.col, animal.row + spaceNum);
+            n.setPosition(new Vec3(pos.x, pos.y, 0));
+          });
+        }
+      } else if (this.movedNodesUp.length > 0) {
+        this.node.setPosition(new Vec3(this.node.position.x, this.node.position.y + y, 0));
+        this.movedNodesUp.forEach((n) => {
+          const ps = n.getPosition();
+          n.setPosition(new Vec3(ps.x, ps.y + y, 0));
+        });
+      } else {
+        this.node.setPosition(new Vec3(this.node.position.x, this.node.position.y + y, 0));
+      }
+    } else {
+      this.movedNodesDown = this.getRelatedNodes(Direction.DOWN);
+      const firstRelatedNode =
+        this.movedNodesDown.length > 0 ? this.movedNodesDown[this.movedNodesDown.length - 1] : this.node;
+      if (firstRelatedNode.getComponent(AnimalNode).row <= 0) {
+        return;
+      }
+      let spaceNum = 0;
+      for (let i = firstRelatedNode.getComponent(AnimalNode).row - 1; i >= 0; i--) {
+        if (this.getNodeByPostion({ col: firstRelatedNode.getComponent(AnimalNode).col, row: i }) != null) {
+          break;
+        }
+        spaceNum++;
+      }
+      if (Math.abs(this.sumY) > spaceNum * 60) {
+        let rowMin = this.node.getComponent(AnimalNode).row - spaceNum;
+        const pos = this.getPostionByCoodidate(firstRelatedNode.getComponent(AnimalNode).col, rowMin);
+        this.node.setPosition(new Vec3(pos.x, pos.y, 0));
+        this.sumY = spaceNum * -60;
+        if (this.movedNodesDown.length > 0) {
+          this.movedNodesDown.forEach((n) => {
+            let animal = n.getComponent(AnimalNode);
+            const pos = this.getPostionByCoodidate(animal.col, animal.row - spaceNum);
+            n.setPosition(new Vec3(pos.x, pos.y, 0));
+          });
+        }
+      } else if (this.movedNodesDown.length > 0) {
+        this.node.setPosition(new Vec3(this.node.position.x, this.node.position.y + y, 0));
+        this.movedNodesDown.forEach((n) => {
+          const ps = n.getPosition();
+          n.setPosition(new Vec3(ps.x, ps.y + y, 0));
+        });
+      } else {
+        this.node.setPosition(new Vec3(this.node.position.x, this.node.position.y + y, 0));
       }
     }
     const pos = this.node.getPosition();
-    this.node.setPosition(new Vec3(pos.x + x, this.originY, 0));
+    this.node.setPosition(new Vec3(this.originX, pos.y, 0));
   }
-  moveVertical(x: number, y: number) {}
   checkDirection() {
     const max = 10; //拖动超过30后判断只能横向还是纵向
     if (Math.max(Math.abs(this.sumX), Math.abs(this.sumY)) < max) {
@@ -224,11 +266,24 @@ export class AnimalNode extends Component {
     return nodes;
   }
 
+  onTouchCancel(touch: EventTouch) {
+    console.log("onTouchCancel", touch.type, this.id);
+    this.node.setPosition(new Vec3(this.originX, this.originY, 0));
+    const allNodes = [...this.movedNodesLeft, ...this.movedNodesRight];
+    allNodes.forEach((e) => {
+      const animal = e.getComponent(AnimalNode);
+      animal.updatePosByCordinate();
+    });
+    this.movedNodesLeft = [];
+    this.movedNodesRight = [];
+    this.movedNodesUp = [];
+    this.movedNodesDown = [];
+  }
   onTouchEnd(touch: EventTouch) {
-    console.log("onTouchEnd---before", touch.type, this.sumX, this.sumY);
+    console.log("onTouchEnd", touch.type, this.id);
+    this.offAllTouch(this.node.parent);
     this.sumX = Math.round(this.sumX / 60) * 60;
     this.sumY = Math.round(this.sumY / 60) * 60;
-    console.log("onTouchEnd", touch.type, this.sumX, this.sumY);
     const targetPos = this.getCoordinateByPos(this.originX + this.sumX, this.originY + this.sumY);
     this.sumX = 0;
     this.sumY = 0;
@@ -240,6 +295,7 @@ export class AnimalNode extends Component {
       allNodes.forEach((e) => {
         e.getComponent(AnimalNode).resetPositionAndCoordinate();
       });
+      this.onAllTouch(this.node.parent);
       return;
     }
     const offsetCol = targetPos.col - this.col;
@@ -255,6 +311,61 @@ export class AnimalNode extends Component {
     this.destroyNode(this.col, this.row, this);
     this.movedNodesLeft = [];
     this.movedNodesRight = [];
+  }
+  destroyNode(col: number, row: number, target: AnimalNode) {
+    this.node.parent.getComponent(GameManager).needDestroyIds.push(target.id);
+    let sameNodes = this.node.parent.getComponent(GameManager).sameNodes;
+    const parent: Node = this.node.parent;
+    if (sameNodes.length === 1) {
+      const manager = this.node.parent.getComponent(GameManager);
+      manager.needDestroyIds.push(sameNodes[0].getComponent(AnimalNode).id);
+      manager.destroyNodes();
+      this.onAllTouch(parent);
+    } else if (sameNodes.length > 1) {
+      const nodes = parent.children;
+      nodes.forEach((e) => {
+        const sprite = e.getComponent(Sprite);
+        sprite.grayscale = true;
+      });
+      this.node.parent.getComponent(GameManager).sameNodes.forEach((e) => {
+        e.getComponent(Sprite).grayscale = false;
+        e.on(NodeEventType.TOUCH_START, () => e.getComponent(AnimalNode).clickChoose(e), e);
+      });
+    } else {
+      console.log("gggggg");
+    }
+  }
+  clickChoose(target: Node) {
+    const manager = this.node.parent.getComponent(GameManager);
+    manager.needDestroyIds.push(target.getComponent(AnimalNode).id);
+    const parent = this.node.parent;
+    parent.getComponent(GameManager).sameNodes.forEach((e) => {
+      if (e) {
+        e.off(NodeEventType.TOUCH_START);
+      }
+    });
+    manager.destroyNodes();
+    manager.node.getComponentsInChildren(AnimalNode).forEach((e) => {
+      e.getComponent(Sprite).grayscale = false;
+    });
+    console.log("clickChoose onAllTouch");
+    this.onAllTouch(parent);
+  }
+  private offAllTouch(parent: Node) {
+    console.log("offAllTouch");
+    parent.getComponentsInChildren(AnimalNode).forEach((e) => {
+      e.node.off(NodeEventType.TOUCH_MOVE);
+      e.node.off(NodeEventType.TOUCH_END);
+      e.node.off(NodeEventType.TOUCH_CANCEL);
+    });
+  }
+  private onAllTouch(parent: Node) {
+    console.log("onAllTouch");
+    parent.getComponentsInChildren(AnimalNode).forEach((e) => {
+      e.node.on(NodeEventType.TOUCH_MOVE, e.onTouchMove, e);
+      e.node.on(NodeEventType.TOUCH_END, e.onTouchEnd, e);
+      e.node.on(NodeEventType.TOUCH_CANCEL, e.onTouchCancel, e);
+    });
   }
 
   private getCoordinateByPos(x: number, y: number): Position {

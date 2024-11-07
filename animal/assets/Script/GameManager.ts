@@ -18,6 +18,7 @@ export class GameManager extends Component {
   public ElementPrefab: Node | null = null;
   private readonly ALL_TYPE = 12;
   public needDestroyIds: number[] = [];
+  public sameNodes: Node[] = [];
   start() {
     console.log(sys.platform);
     console.log(view.getVisibleSize());
@@ -106,13 +107,13 @@ export class GameManager extends Component {
 
   destroyNodes() {
     console.log("要销毁的节点---->", this.needDestroyIds.length);
-
     this.getComponentsInChildren(AnimalNode)
       .filter((e) => this.needDestroyIds.indexOf(e.id) > -1)
       .forEach((e) => {
         e.node.destroy();
       });
     this.needDestroyIds = [];
+    this.sameNodes = [];
     this.node.children.forEach((e) => {
       const sprite = e.getComponent(Sprite);
       sprite.grayscale = false;
