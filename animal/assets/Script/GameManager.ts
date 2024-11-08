@@ -16,7 +16,7 @@ export enum Direction {
 export class GameManager extends Component {
   @property({ type: Prefab })
   public ElementPrefab: Node | null = null;
-  private readonly ALL_TYPE = 12;
+  private readonly ALL_TYPE = 9;
   public needDestroyIds: number[] = [];
   public sameNodes: Node[] = [];
   start() {

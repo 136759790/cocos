@@ -51,6 +51,7 @@ export class AnimalNode extends Component {
   moveHorizontal(x: number, y: number) {
     this.movedNodesLeft = [];
     this.movedNodesRight = [];
+    this.sumY = 0;
     if (this.sumX > 0) {
       this.movedNodesRight = this.getRelatedNodes(Direction.RIGHT);
       const lastRelatedNode =
@@ -70,7 +71,7 @@ export class AnimalNode extends Component {
         let colMax = this.node.getComponent(AnimalNode).col + spaceNum;
         const pos = this.getPostionByCoodidate(colMax, lastRelatedNode.getComponent(AnimalNode).row);
         this.node.setPosition(new Vec3(pos.x, pos.y, 0));
-        this.sumX = spaceNum * 60;
+        console.log("超出范围", spaceNum, this.sumX);
         if (this.movedNodesRight.length > 0) {
           this.movedNodesRight.forEach((n) => {
             let animal = n.getComponent(AnimalNode);
@@ -105,7 +106,6 @@ export class AnimalNode extends Component {
         let colMin = this.node.getComponent(AnimalNode).col - spaceNum;
         const pos = this.getPostionByCoodidate(colMin, firstRelatedNode.getComponent(AnimalNode).row);
         this.node.setPosition(new Vec3(pos.x, pos.y, 0));
-        this.sumX = spaceNum * -60;
         if (this.movedNodesLeft.length > 0) {
           this.movedNodesLeft.forEach((n) => {
             let animal = n.getComponent(AnimalNode);
@@ -217,7 +217,7 @@ export class AnimalNode extends Component {
     const nodes: Node[] = [];
     switch (direction) {
       case Direction.UP:
-        for (let i = this.row; i < 13; i++) {
+        for (let i = this.row + 1; i < 13; i++) {
           const nextNode = this.node.parent
             .getComponentsInChildren(AnimalNode)
             .find((e) => e.col === this.col && e.row === i);
@@ -239,7 +239,7 @@ export class AnimalNode extends Component {
         }
         break;
       case Direction.DOWN:
-        for (let i = this.row; i >= 0; i--) {
+        for (let i = this.row - 1; i >= 0; i--) {
           const nextNode = this.node.parent
             .getComponentsInChildren(AnimalNode)
             .find((e) => e.col === this.col && e.row === i);
@@ -250,7 +250,7 @@ export class AnimalNode extends Component {
         }
         break;
       case Direction.LEFT:
-        for (let i = this.col; i >= 0; i--) {
+        for (let i = this.col - 1; i >= 0; i--) {
           const nextNode = this.node.parent
             .getComponentsInChildren(AnimalNode)
             .find((e) => e.col === i && e.row === this.row);
@@ -269,7 +269,7 @@ export class AnimalNode extends Component {
   onTouchCancel(touch: EventTouch) {
     console.log("onTouchCancel", touch.type, this.id);
     this.node.setPosition(new Vec3(this.originX, this.originY, 0));
-    const allNodes = [...this.movedNodesLeft, ...this.movedNodesRight];
+    const allNodes = [...this.movedNodesLeft, ...this.movedNodesRight, ...this.movedNodesUp, ...this.movedNodesDown];
     allNodes.forEach((e) => {
       const animal = e.getComponent(AnimalNode);
       animal.updatePosByCordinate();
@@ -278,6 +278,8 @@ export class AnimalNode extends Component {
     this.movedNodesRight = [];
     this.movedNodesUp = [];
     this.movedNodesDown = [];
+    this.sumX = 0;
+    this.sumY = 0;
   }
   onTouchEnd(touch: EventTouch) {
     console.log("onTouchEnd", touch.type, this.id);
@@ -285,11 +287,13 @@ export class AnimalNode extends Component {
     this.sumX = Math.round(this.sumX / 60) * 60;
     this.sumY = Math.round(this.sumY / 60) * 60;
     const targetPos = this.getCoordinateByPos(this.originX + this.sumX, this.originY + this.sumY);
-    this.sumX = 0;
-    this.sumY = 0;
     this.node.setPosition(new Vec3(targetPos.x, targetPos.y, 0));
+    const offsetCol = targetPos.col - this.col;
+    const offsetRow = targetPos.row - this.row;
+    this.col = targetPos.col;
+    this.row = targetPos.row;
     const hasSameNode = this.hasSameNode(targetPos.col, targetPos.row, this);
-    const allNodes = [...this.movedNodesLeft, ...this.movedNodesRight];
+    const allNodes = [...this.movedNodesLeft, ...this.movedNodesRight, ...this.movedNodesUp, ...this.movedNodesDown];
     if (!hasSameNode) {
       this.resetPositionAndCoordinate();
       allNodes.forEach((e) => {
@@ -298,19 +302,19 @@ export class AnimalNode extends Component {
       this.onAllTouch(this.node.parent);
       return;
     }
-    const offsetCol = targetPos.col - this.col;
-    const offsetRow = targetPos.row - this.row;
     allNodes.forEach((e) => {
       const animal = e.getComponent(AnimalNode);
       animal.col += offsetCol;
       animal.row += offsetRow;
       animal.updatePosByCordinate();
     });
-    this.col = targetPos.col;
-    this.row = targetPos.row;
     this.destroyNode(this.col, this.row, this);
     this.movedNodesLeft = [];
     this.movedNodesRight = [];
+    this.movedNodesUp = [];
+    this.movedNodesDown = [];
+    this.sumX = 0;
+    this.sumY = 0;
   }
   destroyNode(col: number, row: number, target: AnimalNode) {
     this.node.parent.getComponent(GameManager).needDestroyIds.push(target.id);
@@ -379,8 +383,8 @@ export class AnimalNode extends Component {
     return {
       col: rx,
       row: ry,
-      x: this.col * 60 + 40,
-      y: this.row * 60,
+      x: rx * 60 + 40,
+      y: ry * 60,
     };
   }
   /**
@@ -431,12 +435,14 @@ export class AnimalNode extends Component {
     };
   }
   resetPositionAndCoordinate() {
+    console.log("resetPositionAndCoordinate");
     this.node.setPosition(new Vec3(this.originX, this.originY, 0));
     const data = this.getCoordinateByPos(this.originX, this.originY);
     this.node.getComponent(AnimalNode).col = data.col;
     this.node.getComponent(AnimalNode).row = data.row;
   }
   updatePosByCordinate() {
+    console.log("updatePosByCordinate");
     const x = this.col * 60 + 40;
     const y = this.row * 60;
     this.node.setPosition(new Vec3(x, y, 0));
