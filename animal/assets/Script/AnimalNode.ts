@@ -20,7 +20,8 @@ export class AnimalNode extends Component {
   start() {
     this.node.on(NodeEventType.TOUCH_MOVE, this.onTouchMove, this);
     this.node.on(NodeEventType.TOUCH_END, this.onTouchEnd, this);
-    this.node.on(NodeEventType.TOUCH_CANCEL, this.onTouchCancel, this);
+    this.node.on(NodeEventType.TOUCH_CANCEL, this.onTouchEnd, this);
+    // this.node.on(NodeEventType.TOUCH_CANCEL, this.onTouchCancel, this);
   }
 
   hasSameNode(col: number, row: number, target: AnimalNode): boolean {
@@ -68,6 +69,7 @@ export class AnimalNode extends Component {
       }
       if (this.sumX > spaceNum * 60) {
         //超出拖动范围
+        this.sumX = spaceNum * 60;
         let colMax = this.node.getComponent(AnimalNode).col + spaceNum;
         const pos = this.getPostionByCoodidate(colMax, lastRelatedNode.getComponent(AnimalNode).row);
         this.node.setPosition(new Vec3(pos.x, pos.y, 0));
@@ -103,6 +105,7 @@ export class AnimalNode extends Component {
         spaceNum++;
       }
       if (Math.abs(this.sumX) > spaceNum * 60) {
+        this.sumX = spaceNum * -60;
         let colMin = this.node.getComponent(AnimalNode).col - spaceNum;
         const pos = this.getPostionByCoodidate(colMin, firstRelatedNode.getComponent(AnimalNode).row);
         this.node.setPosition(new Vec3(pos.x, pos.y, 0));
@@ -128,6 +131,7 @@ export class AnimalNode extends Component {
     this.movedNodesUp = [];
     this.movedNodesDown = [];
     if (this.sumY > 0) {
+      this.sumX = 0;
       this.movedNodesUp = this.getRelatedNodes(Direction.UP);
       const lastRelatedNode =
         this.movedNodesUp.length > 0 ? this.movedNodesUp[this.movedNodesUp.length - 1] : this.node;
@@ -142,6 +146,7 @@ export class AnimalNode extends Component {
         spaceNum++;
       }
       if (this.sumY > spaceNum * 60) {
+        this.sumY = spaceNum * 60;
         //超出拖动范围
         let rowMax = this.node.getComponent(AnimalNode).row + spaceNum;
         const pos = this.getPostionByCoodidate(lastRelatedNode.getComponent(AnimalNode).col, rowMax);
@@ -177,6 +182,7 @@ export class AnimalNode extends Component {
         }
         spaceNum++;
       }
+      this.sumY = spaceNum * -60;
       if (Math.abs(this.sumY) > spaceNum * 60) {
         let rowMin = this.node.getComponent(AnimalNode).row - spaceNum;
         const pos = this.getPostionByCoodidate(firstRelatedNode.getComponent(AnimalNode).col, rowMin);
@@ -368,7 +374,8 @@ export class AnimalNode extends Component {
     parent.getComponentsInChildren(AnimalNode).forEach((e) => {
       e.node.on(NodeEventType.TOUCH_MOVE, e.onTouchMove, e);
       e.node.on(NodeEventType.TOUCH_END, e.onTouchEnd, e);
-      e.node.on(NodeEventType.TOUCH_CANCEL, e.onTouchCancel, e);
+      e.node.on(NodeEventType.TOUCH_CANCEL, e.onTouchEnd, e);
+      // e.node.on(NodeEventType.TOUCH_CANCEL, e.onTouchCancel, e);
     });
   }
 
