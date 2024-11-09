@@ -1,17 +1,28 @@
-import { _decorator, Component, instantiate, Node, Prefab, resources, Sprite, SpriteFrame, sys, view } from "cc";
+import {
+  _decorator,
+  Component,
+  instantiate,
+  Node,
+  Prefab,
+  resources,
+  Sprite,
+  SpriteFrame,
+  sys,
+  view,
+} from "cc";
 import { AnimalNode } from "./AnimalNode";
 const { ccclass, property } = _decorator;
-interface Position {
-  col: number;
-  row: number;
-}
 export enum Direction {
   UP,
   RIGHT,
   DOWN,
   LEFT,
 }
-
+export enum Constant {
+  OBJ_WIDTH = 60,
+  OBJ_HEIGHT = 60,
+  OBJ_COL_OFFSET = 40,
+}
 @ccclass("GameManager")
 export class GameManager extends Component {
   @property({ type: Prefab })
@@ -30,7 +41,7 @@ export class GameManager extends Component {
   }
   initGame() {
     console.log("initGame");
-    this.createContainer(6);
+    this.createContainer(this.ALL_TYPE);
   }
   createContainer(typeCount: number) {
     const array = this.getBoxArray(typeCount);
@@ -50,9 +61,12 @@ export class GameManager extends Component {
       node.col = col;
       node.row = row;
       this.node.addChild(e);
-      e.setPosition(col * 60 + 40, row * 60);
-      node.originY = row * 60;
-      node.originX = col * 60 + 40;
+      e.setPosition(
+        col * Constant.OBJ_WIDTH + Constant.OBJ_COL_OFFSET,
+        row * Constant.OBJ_HEIGHT
+      );
+      node.originY = row * Constant.OBJ_HEIGHT;
+      node.originX = col * Constant.OBJ_WIDTH + Constant.OBJ_COL_OFFSET;
       col++;
       if (col >= xMax) {
         col = 0;
@@ -73,7 +87,9 @@ export class GameManager extends Component {
     const baseTimes = Math.floor(70 / typeCount);
     const moreTimeTypeCounts = 70 % typeCount;
     const allElement = Array.from({ length: this.ALL_TYPE }, (_, i) => i + 1);
-    const selectedElement = allElement.sort(() => Math.random() - 0.5).slice(0, typeCount);
+    const selectedElement = allElement
+      .sort(() => Math.random() - 0.5)
+      .slice(0, typeCount);
     let finalArray = [];
     //添加基准的
     selectedElement.forEach((e) => {

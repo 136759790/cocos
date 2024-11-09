@@ -1,4 +1,12 @@
-import { _decorator, Component, EventTouch, Node, NodeEventType, Sprite, Vec3 } from "cc";
+import {
+  _decorator,
+  Component,
+  EventTouch,
+  Node,
+  NodeEventType,
+  Sprite,
+  Vec3,
+} from "cc";
 import { GameManager } from "./GameManager";
 const { ccclass, property } = _decorator;
 @ccclass("AnimalNode")
@@ -31,7 +39,9 @@ export class AnimalNode extends Component {
     const left = this.getNextNode({ col, row }, Direction.LEFT);
     const right = this.getNextNode({ col, row }, Direction.RIGHT);
     const array = [up, down, left, right].filter((e) => e != null);
-    const sameNodes = array.filter((e) => e.getComponent(AnimalNode).index == index);
+    const sameNodes = array.filter(
+      (e) => e.getComponent(AnimalNode).index == index
+    );
     this.node.parent.getComponent(GameManager).sameNodes = sameNodes;
     return sameNodes.length > 0;
   }
@@ -56,13 +66,24 @@ export class AnimalNode extends Component {
     if (this.sumX > 0) {
       this.movedNodesRight = this.getRelatedNodes(Direction.RIGHT);
       const lastRelatedNode =
-        this.movedNodesRight.length > 0 ? this.movedNodesRight[this.movedNodesRight.length - 1] : this.node;
+        this.movedNodesRight.length > 0
+          ? this.movedNodesRight[this.movedNodesRight.length - 1]
+          : this.node;
       if (lastRelatedNode.getComponent(AnimalNode).col >= 9) {
         return;
       }
       let spaceNum = 0;
-      for (let i = lastRelatedNode.getComponent(AnimalNode).col + 1; i <= 9; i++) {
-        if (this.getNodeByPostion({ col: i, row: lastRelatedNode.getComponent(AnimalNode).row }) != null) {
+      for (
+        let i = lastRelatedNode.getComponent(AnimalNode).col + 1;
+        i <= 9;
+        i++
+      ) {
+        if (
+          this.getNodeByPostion({
+            col: i,
+            row: lastRelatedNode.getComponent(AnimalNode).row,
+          }) != null
+        ) {
           break;
         }
         spaceNum++;
@@ -71,35 +92,56 @@ export class AnimalNode extends Component {
         //超出拖动范围
         this.sumX = spaceNum * 60;
         let colMax = this.node.getComponent(AnimalNode).col + spaceNum;
-        const pos = this.getPostionByCoodidate(colMax, lastRelatedNode.getComponent(AnimalNode).row);
+        const pos = this.getPostionByCoodidate(
+          colMax,
+          lastRelatedNode.getComponent(AnimalNode).row
+        );
         this.node.setPosition(new Vec3(pos.x, pos.y, 0));
         console.log("超出范围", spaceNum, this.sumX);
         if (this.movedNodesRight.length > 0) {
           this.movedNodesRight.forEach((n) => {
             let animal = n.getComponent(AnimalNode);
-            const pos = this.getPostionByCoodidate(animal.col + spaceNum, animal.row);
+            const pos = this.getPostionByCoodidate(
+              animal.col + spaceNum,
+              animal.row
+            );
             n.setPosition(new Vec3(pos.x, pos.y, 0));
           });
         }
       } else if (this.movedNodesRight.length > 0) {
-        this.node.setPosition(new Vec3(this.node.position.x + x, this.node.position.y, 0));
+        this.node.setPosition(
+          new Vec3(this.node.position.x + x, this.node.position.y, 0)
+        );
         this.movedNodesRight.forEach((n) => {
           const ps = n.getPosition();
           n.setPosition(new Vec3(ps.x + x, ps.y, 0));
         });
       } else {
-        this.node.setPosition(new Vec3(this.node.position.x + x, this.node.position.y, 0));
+        this.node.setPosition(
+          new Vec3(this.node.position.x + x, this.node.position.y, 0)
+        );
       }
     } else {
       this.movedNodesLeft = this.getRelatedNodes(Direction.LEFT);
       const firstRelatedNode =
-        this.movedNodesLeft.length > 0 ? this.movedNodesLeft[this.movedNodesLeft.length - 1] : this.node;
+        this.movedNodesLeft.length > 0
+          ? this.movedNodesLeft[this.movedNodesLeft.length - 1]
+          : this.node;
       if (firstRelatedNode.getComponent(AnimalNode).col <= 0) {
         return;
       }
       let spaceNum = 0;
-      for (let i = firstRelatedNode.getComponent(AnimalNode).col - 1; i >= 0; i--) {
-        if (this.getNodeByPostion({ col: i, row: firstRelatedNode.getComponent(AnimalNode).row }) != null) {
+      for (
+        let i = firstRelatedNode.getComponent(AnimalNode).col - 1;
+        i >= 0;
+        i--
+      ) {
+        if (
+          this.getNodeByPostion({
+            col: i,
+            row: firstRelatedNode.getComponent(AnimalNode).row,
+          }) != null
+        ) {
           break;
         }
         spaceNum++;
@@ -107,23 +149,33 @@ export class AnimalNode extends Component {
       if (Math.abs(this.sumX) > spaceNum * 60) {
         this.sumX = spaceNum * -60;
         let colMin = this.node.getComponent(AnimalNode).col - spaceNum;
-        const pos = this.getPostionByCoodidate(colMin, firstRelatedNode.getComponent(AnimalNode).row);
+        const pos = this.getPostionByCoodidate(
+          colMin,
+          firstRelatedNode.getComponent(AnimalNode).row
+        );
         this.node.setPosition(new Vec3(pos.x, pos.y, 0));
         if (this.movedNodesLeft.length > 0) {
           this.movedNodesLeft.forEach((n) => {
             let animal = n.getComponent(AnimalNode);
-            const pos = this.getPostionByCoodidate(animal.col - spaceNum, animal.row);
+            const pos = this.getPostionByCoodidate(
+              animal.col - spaceNum,
+              animal.row
+            );
             n.setPosition(new Vec3(pos.x, pos.y, 0));
           });
         }
       } else if (this.movedNodesLeft.length > 0) {
-        this.node.setPosition(new Vec3(this.node.position.x + x, this.node.position.y, 0));
+        this.node.setPosition(
+          new Vec3(this.node.position.x + x, this.node.position.y, 0)
+        );
         this.movedNodesLeft.forEach((n) => {
           const ps = n.getPosition();
           n.setPosition(new Vec3(ps.x + x, ps.y, 0));
         });
       } else {
-        this.node.setPosition(new Vec3(this.node.position.x + x, this.node.position.y, 0));
+        this.node.setPosition(
+          new Vec3(this.node.position.x + x, this.node.position.y, 0)
+        );
       }
     }
   }
@@ -134,13 +186,24 @@ export class AnimalNode extends Component {
       this.sumX = 0;
       this.movedNodesUp = this.getRelatedNodes(Direction.UP);
       const lastRelatedNode =
-        this.movedNodesUp.length > 0 ? this.movedNodesUp[this.movedNodesUp.length - 1] : this.node;
+        this.movedNodesUp.length > 0
+          ? this.movedNodesUp[this.movedNodesUp.length - 1]
+          : this.node;
       if (lastRelatedNode.getComponent(AnimalNode).row >= 13) {
         return;
       }
       let spaceNum = 0;
-      for (let i = lastRelatedNode.getComponent(AnimalNode).row + 1; i <= 13; i++) {
-        if (this.getNodeByPostion({ col: lastRelatedNode.getComponent(AnimalNode).col, row: i }) != null) {
+      for (
+        let i = lastRelatedNode.getComponent(AnimalNode).row + 1;
+        i <= 13;
+        i++
+      ) {
+        if (
+          this.getNodeByPostion({
+            col: lastRelatedNode.getComponent(AnimalNode).col,
+            row: i,
+          }) != null
+        ) {
           break;
         }
         spaceNum++;
@@ -149,35 +212,56 @@ export class AnimalNode extends Component {
         this.sumY = spaceNum * 60;
         //超出拖动范围
         let rowMax = this.node.getComponent(AnimalNode).row + spaceNum;
-        const pos = this.getPostionByCoodidate(lastRelatedNode.getComponent(AnimalNode).col, rowMax);
+        const pos = this.getPostionByCoodidate(
+          lastRelatedNode.getComponent(AnimalNode).col,
+          rowMax
+        );
         this.node.setPosition(new Vec3(pos.x, pos.y, 0));
         this.sumY = spaceNum * 60;
         if (this.movedNodesUp.length > 0) {
           this.movedNodesUp.forEach((n) => {
             let animal = n.getComponent(AnimalNode);
-            const pos = this.getPostionByCoodidate(animal.col, animal.row + spaceNum);
+            const pos = this.getPostionByCoodidate(
+              animal.col,
+              animal.row + spaceNum
+            );
             n.setPosition(new Vec3(pos.x, pos.y, 0));
           });
         }
       } else if (this.movedNodesUp.length > 0) {
-        this.node.setPosition(new Vec3(this.node.position.x, this.node.position.y + y, 0));
+        this.node.setPosition(
+          new Vec3(this.node.position.x, this.node.position.y + y, 0)
+        );
         this.movedNodesUp.forEach((n) => {
           const ps = n.getPosition();
           n.setPosition(new Vec3(ps.x, ps.y + y, 0));
         });
       } else {
-        this.node.setPosition(new Vec3(this.node.position.x, this.node.position.y + y, 0));
+        this.node.setPosition(
+          new Vec3(this.node.position.x, this.node.position.y + y, 0)
+        );
       }
     } else {
       this.movedNodesDown = this.getRelatedNodes(Direction.DOWN);
       const firstRelatedNode =
-        this.movedNodesDown.length > 0 ? this.movedNodesDown[this.movedNodesDown.length - 1] : this.node;
+        this.movedNodesDown.length > 0
+          ? this.movedNodesDown[this.movedNodesDown.length - 1]
+          : this.node;
       if (firstRelatedNode.getComponent(AnimalNode).row <= 0) {
         return;
       }
       let spaceNum = 0;
-      for (let i = firstRelatedNode.getComponent(AnimalNode).row - 1; i >= 0; i--) {
-        if (this.getNodeByPostion({ col: firstRelatedNode.getComponent(AnimalNode).col, row: i }) != null) {
+      for (
+        let i = firstRelatedNode.getComponent(AnimalNode).row - 1;
+        i >= 0;
+        i--
+      ) {
+        if (
+          this.getNodeByPostion({
+            col: firstRelatedNode.getComponent(AnimalNode).col,
+            row: i,
+          }) != null
+        ) {
           break;
         }
         spaceNum++;
@@ -185,24 +269,34 @@ export class AnimalNode extends Component {
       this.sumY = spaceNum * -60;
       if (Math.abs(this.sumY) > spaceNum * 60) {
         let rowMin = this.node.getComponent(AnimalNode).row - spaceNum;
-        const pos = this.getPostionByCoodidate(firstRelatedNode.getComponent(AnimalNode).col, rowMin);
+        const pos = this.getPostionByCoodidate(
+          firstRelatedNode.getComponent(AnimalNode).col,
+          rowMin
+        );
         this.node.setPosition(new Vec3(pos.x, pos.y, 0));
         this.sumY = spaceNum * -60;
         if (this.movedNodesDown.length > 0) {
           this.movedNodesDown.forEach((n) => {
             let animal = n.getComponent(AnimalNode);
-            const pos = this.getPostionByCoodidate(animal.col, animal.row - spaceNum);
+            const pos = this.getPostionByCoodidate(
+              animal.col,
+              animal.row - spaceNum
+            );
             n.setPosition(new Vec3(pos.x, pos.y, 0));
           });
         }
       } else if (this.movedNodesDown.length > 0) {
-        this.node.setPosition(new Vec3(this.node.position.x, this.node.position.y + y, 0));
+        this.node.setPosition(
+          new Vec3(this.node.position.x, this.node.position.y + y, 0)
+        );
         this.movedNodesDown.forEach((n) => {
           const ps = n.getPosition();
           n.setPosition(new Vec3(ps.x, ps.y + y, 0));
         });
       } else {
-        this.node.setPosition(new Vec3(this.node.position.x, this.node.position.y + y, 0));
+        this.node.setPosition(
+          new Vec3(this.node.position.x, this.node.position.y + y, 0)
+        );
       }
     }
     const pos = this.node.getPosition();
@@ -275,7 +369,12 @@ export class AnimalNode extends Component {
   onTouchCancel(touch: EventTouch) {
     console.log("onTouchCancel", touch.type, this.id);
     this.node.setPosition(new Vec3(this.originX, this.originY, 0));
-    const allNodes = [...this.movedNodesLeft, ...this.movedNodesRight, ...this.movedNodesUp, ...this.movedNodesDown];
+    const allNodes = [
+      ...this.movedNodesLeft,
+      ...this.movedNodesRight,
+      ...this.movedNodesUp,
+      ...this.movedNodesDown,
+    ];
     allNodes.forEach((e) => {
       const animal = e.getComponent(AnimalNode);
       animal.updatePosByCordinate();
@@ -292,14 +391,22 @@ export class AnimalNode extends Component {
     this.offAllTouch(this.node.parent);
     this.sumX = Math.round(this.sumX / 60) * 60;
     this.sumY = Math.round(this.sumY / 60) * 60;
-    const targetPos = this.getCoordinateByPos(this.originX + this.sumX, this.originY + this.sumY);
+    const targetPos = this.getCoordinateByPos(
+      this.originX + this.sumX,
+      this.originY + this.sumY
+    );
     this.node.setPosition(new Vec3(targetPos.x, targetPos.y, 0));
     const offsetCol = targetPos.col - this.col;
     const offsetRow = targetPos.row - this.row;
     this.col = targetPos.col;
     this.row = targetPos.row;
     const hasSameNode = this.hasSameNode(targetPos.col, targetPos.row, this);
-    const allNodes = [...this.movedNodesLeft, ...this.movedNodesRight, ...this.movedNodesUp, ...this.movedNodesDown];
+    const allNodes = [
+      ...this.movedNodesLeft,
+      ...this.movedNodesRight,
+      ...this.movedNodesUp,
+      ...this.movedNodesDown,
+    ];
     if (!hasSameNode) {
       this.resetPositionAndCoordinate();
       allNodes.forEach((e) => {
@@ -339,19 +446,24 @@ export class AnimalNode extends Component {
       });
       this.node.parent.getComponent(GameManager).sameNodes.forEach((e) => {
         e.getComponent(Sprite).grayscale = false;
-        e.on(NodeEventType.TOUCH_START, () => e.getComponent(AnimalNode).clickChoose(e), e);
+        e.on(
+          NodeEventType.TOUCH_END,
+          () => e.getComponent(AnimalNode).clickChoose(e),
+          e
+        );
       });
     } else {
       console.log("gggggg");
     }
   }
   clickChoose(target: Node) {
+    console.log("clickChoose", target);
     const manager = this.node.parent.getComponent(GameManager);
     manager.needDestroyIds.push(target.getComponent(AnimalNode).id);
     const parent = this.node.parent;
     parent.getComponent(GameManager).sameNodes.forEach((e) => {
       if (e) {
-        e.off(NodeEventType.TOUCH_START);
+        e.off(NodeEventType.TOUCH_END);
       }
     });
     manager.destroyNodes();
@@ -362,7 +474,10 @@ export class AnimalNode extends Component {
     this.onAllTouch(parent);
   }
   private offAllTouch(parent: Node) {
-    console.log("offAllTouch");
+    console.log(
+      "offAllTouch",
+      parent.getComponentsInChildren(AnimalNode).length
+    );
     parent.getComponentsInChildren(AnimalNode).forEach((e) => {
       e.node.off(NodeEventType.TOUCH_MOVE);
       e.node.off(NodeEventType.TOUCH_END);
@@ -370,7 +485,10 @@ export class AnimalNode extends Component {
     });
   }
   private onAllTouch(parent: Node) {
-    console.log("onAllTouch");
+    console.log(
+      "onAllTouch",
+      parent.getComponentsInChildren(AnimalNode).length
+    );
     parent.getComponentsInChildren(AnimalNode).forEach((e) => {
       e.node.on(NodeEventType.TOUCH_MOVE, e.onTouchMove, e);
       e.node.on(NodeEventType.TOUCH_END, e.onTouchEnd, e);
@@ -421,7 +539,9 @@ export class AnimalNode extends Component {
         col--;
         break;
     }
-    const node = this.node.parent.getComponentsInChildren(AnimalNode).find((e) => e.col === col && e.row === row);
+    const node = this.node.parent
+      .getComponentsInChildren(AnimalNode)
+      .find((e) => e.col === col && e.row === row);
     if (node == undefined) {
       return this.getNextNode({ col, row }, direction);
     }
@@ -429,7 +549,9 @@ export class AnimalNode extends Component {
   }
   getNodeByPostion(position: Position): Node | null {
     let { col, row } = position;
-    const node = this.node.parent.getComponentsInChildren(AnimalNode).find((e) => e.col === col && e.row === row);
+    const node = this.node.parent
+      .getComponentsInChildren(AnimalNode)
+      .find((e) => e.col === col && e.row === row);
     if (!node) {
       return null;
     }
